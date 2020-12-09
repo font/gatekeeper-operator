@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opa-example-app
+  namespace: opa-example-app
+  labels:
+    app: opa-example-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opa-example-app
+  template:
+    metadata:
+      labels:
+        app: opa-example-app
+    spec:
+      containers:
+        - name: opa-example-app
+          image: docker.io/ifont/opa-example-app:latest
+          ports:
+            - containerPort: 8080
+          imagePullPolicy: Always

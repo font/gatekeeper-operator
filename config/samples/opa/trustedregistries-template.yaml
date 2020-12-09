@@ -1,0 +1,49 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8strustedregistries
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sTrustedRegistries
+      validation:
+        # Schema for the `parameters` field
+        openAPIV3Schema:
+          properties:
+            registries:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8strustedregistries
+
+        # For Pods
+        violation[{"msg": msg}] {
+          c := containers[_]
+          satisfied := [good | registry = input.parameters.registries[_] ; good = startswith(c.image, registry)]
+          not any(satisfied)
+          msg := sprintf("container <%v> has an invalid image registry <%v>, allowed registries are %v", [c.name, c.image, input.parameters.registries])
+        }
+
+        # For Pod Containers
+        containers[c] {
+          c := input.review.object.spec.containers[_]
+        }
+
+        # For Pod InitContainers
+        containers[c] {
+          c := input.review.object.spec.initContainers[_]
+        }
+
+        # For Templated Pod Containers
+        containers[c] {
+          c := input.review.object.spec.template.spec.containers[_]
+        }
+
+        # For Templated Pod InitContainers
+        containers[c] {
+          c := input.review.object.spec.template.spec.initContainers[_]
+        }
